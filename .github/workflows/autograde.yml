@@ -3,7 +3,6 @@ name: Autograde Taller 5
 on:
   pull_request:
   push:
-    branches: [ "**" ]
   workflow_dispatch:
 
 permissions:
@@ -17,33 +16,47 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configurar JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Descargar autograde oficial
+      - name: Descargar autograde y workflow oficiales
         run: |
-          curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/autograde/Autograde.java -o autograde/Autograde_oficial.java || echo "No se pudo descargar, usando local"
+          mkdir -p autograde .github/workflows
+          curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/autograde/Autograde.java \
+            -o autograde/Autograde_oficial.java || echo "WARN: autograde oficial no descargado"
+          curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/.github/workflows/autograde.yml \
+            -o .github/workflows/autograde_oficial.yml || echo "WARN: workflow oficial no descargado"
 
-      - name: Comparar autograde y workflow
+      - name: Compilar código del estudiante + autograde
         run: |
-          # Compara hashes y marca si fueron modificados
-          # (implementar en el autograde)
+          mkdir -p out
+          if ls src/taller5/*.java >/dev/null 2>&1; then
+            javac -d out src/taller5/*.java || echo "WARN: fallo en compilación de algún ejercicio del estudiante"
+          fi
+          javac -d out autograde/Autograde.java
 
       - name: Ejecutar autograde
-        run: |
-          java autograde/Autograde.java
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: java -cp out Autograde
 
       - name: Publicar resumen
+        if: always()
         run: |
-          cat resultado_autograde.json >> $GITHUB_STEP_SUMMARY
+          if [ -f resultado_autograde.json ]; then
+            echo '## Resultado Autograde' >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat resultado_autograde.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Subir artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: resultado-autograde
@@ -51,8 +64,13 @@ jobs:
 
       - name: Fallar si nota < 60
         run: |
-          NOTA=$(jq '.nota' resultado_autograde.json)
+          if [ ! -f resultado_autograde.json ]; then
+            echo "::error::No se generó resultado_autograde.json"
+            exit 1
+          fi
+          NOTA=$(python3 -c "import json; print(json.load(open('resultado_autograde.json'))['nota'])")
+          echo "Nota final: $NOTA"
           if [ "$NOTA" -lt 60 ]; then
-            echo "Nota insuficiente: $NOTA"
+            echo "::error::Nota insuficiente: $NOTA/100"
             exit 1
           fi
