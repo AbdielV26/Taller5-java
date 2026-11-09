@@ -21,7 +21,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-            - name: Descargar autograde y workflow oficiales
+      - name: Descargar autograde y workflow oficiales
         run: |
           mkdir -p autograde autograde_oficial .github/workflows
           # Autograde oficial: se descarga con el nombre correcto para poder compilar
