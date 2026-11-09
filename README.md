@@ -68,3 +68,25 @@ Si la nota es menor a 60, el workflow falla (aparece en rojo). Es normal; corrig
    ```bash
    git clone https://github.com/TU-USUARIO/Taller5-java.git
    cd Taller5-java
+
+4. **Crear rama**: git checkout -b lab10-apellido-nombre
+5. **Configurar identidad**:
+   ```bash
+   git config user.name "Tu Nombre"
+   git config user.email "tu-correo@ejemplo.com"
+
+6. Trabajar los 5 ejercicios en src/taller5/.
+7. Commits por ejercicio (mínimo uno por ejercicio, con prefijo):
+   ```bash
+   git commit -m "ej1: calculadora de propina con JOptionPane"
+   git commit -m "ej2: promedio con BufferedReader"
+   git commit -m "ej3: área y perímetro con JOptionPane"
+   git commit -m "ej4: conversión Celsius-Fahrenheit"
+   git commit -m "ej5: clase Estudiante + E/S mixta"
+   git commit -m "evidencias: capturas de los 5 ejercicios y del job de Actions"
+   git commit -m "informe: datos del estudiante"
+
+8. **Push**: git push origin lab10-apellido-nombre
+9. Abrir Pull Request desde tu rama hacia SarmientoEdu:main. No lo fusiones.
+10. Revisar el resultado en la pestaña Actions de tu fork (Job Summary y artifact resultado-autograde).
+
