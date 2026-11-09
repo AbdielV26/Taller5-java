@@ -29,13 +29,25 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/.github/workflows/autograde.yml \
             -o .github/workflows/autograde_oficial.yml || echo "WARN: workflow oficial no descargado"
 
-      - name: Compilar código del estudiante + autograde
+      - name: Compilar código del estudiante
         run: |
           mkdir -p out
           if ls src/taller5/*.java >/dev/null 2>&1; then
             javac -d out src/taller5/*.java || echo "WARN: fallo en compilación de algún ejercicio del estudiante"
           fi
-          javac -d out autograde/Autograde.java
+
+      - name: Compilar AUTOGRADE OFICIAL (no el local)
+        run: |
+          mkdir -p out_autograde
+          if [ -f autograde/Autograde_oficial.java ]; then
+            # Aislamos el oficial en su propio out para que no colisione con el local
+            javac -d out_autograde autograde/Autograde_oficial.java
+            echo "AUTOGRADE_FUENTE=oficial" >> $GITHUB_ENV
+          else
+            echo "::warning::Autograde oficial no disponible. Usando el LOCAL (riesgo de manipulación)."
+            javac -d out_autograde autograde/Autograde.java
+            echo "AUTOGRADE_FUENTE=local" >> $GITHUB_ENV
+          fi
 
       - name: Ejecutar autograde
         env:
@@ -43,13 +55,16 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_BASE_REF: ${{ github.base_ref }}
           GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: java -cp out Autograde
+        run: |
+          echo "Fuente del autograde: $AUTOGRADE_FUENTE"
+          java -cp "out:out_autograde" Autograde
 
       - name: Publicar resumen
         if: always()
         run: |
           if [ -f resultado_autograde.json ]; then
             echo '## Resultado Autograde' >> $GITHUB_STEP_SUMMARY
+            echo "Fuente del autograde: $AUTOGRADE_FUENTE" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
             cat resultado_autograde.json >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
