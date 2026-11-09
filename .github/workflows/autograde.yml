@@ -1,0 +1,58 @@
+name: Autograde Taller 5
+
+on:
+  pull_request:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  autograde:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Descargar autograde oficial
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/autograde/Autograde.java -o autograde/Autograde_oficial.java || echo "No se pudo descargar, usando local"
+
+      - name: Comparar autograde y workflow
+        run: |
+          # Compara hashes y marca si fueron modificados
+          # (implementar en el autograde)
+
+      - name: Ejecutar autograde
+        run: |
+          java autograde/Autograde.java
+        env:
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
+      - name: Publicar resumen
+        run: |
+          cat resultado_autograde.json >> $GITHUB_STEP_SUMMARY
+
+      - name: Subir artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-autograde
+          path: resultado_autograde.json
+
+      - name: Fallar si nota < 60
+        run: |
+          NOTA=$(jq '.nota' resultado_autograde.json)
+          if [ "$NOTA" -lt 60 ]; then
+            echo "Nota insuficiente: $NOTA"
+            exit 1
+          fi
