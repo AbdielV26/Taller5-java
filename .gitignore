@@ -1,0 +1,25 @@
+# Archivos del autograde (no se suben)
+resultado_autograde.json
+autograde/Autograde_oficial.java
+.github/workflows/autograde_oficial.yml
+
+# Compilados de Java
+*.class
+out/
+target/
+build/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
