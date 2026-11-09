@@ -21,11 +21,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Descargar autograde y workflow oficiales
+            - name: Descargar autograde y workflow oficiales
         run: |
-          mkdir -p autograde .github/workflows
+          mkdir -p autograde autograde_oficial .github/workflows
+          # Autograde oficial: se descarga con el nombre correcto para poder compilar
           curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/autograde/Autograde.java \
-            -o autograde/Autograde_oficial.java || echo "WARN: autograde oficial no descargado"
+            -o autograde_oficial/Autograde.java || echo "WARN: autograde oficial no descargado"
+          # Copia con el nombre que el check de hash interno espera
+          if [ -f autograde_oficial/Autograde.java ]; then
+            cp autograde_oficial/Autograde.java autograde/Autograde_oficial.java
+          fi
+          # Workflow oficial (no se compila, solo se compara)
           curl -fsSL https://raw.githubusercontent.com/SarmientoEdu/Taller5-java/main/.github/workflows/autograde.yml \
             -o .github/workflows/autograde_oficial.yml || echo "WARN: workflow oficial no descargado"
 
@@ -39,9 +45,8 @@ jobs:
       - name: Compilar AUTOGRADE OFICIAL (no el local)
         run: |
           mkdir -p out_autograde
-          if [ -f autograde/Autograde_oficial.java ]; then
-            # Aislamos el oficial en su propio out para que no colisione con el local
-            javac -d out_autograde autograde/Autograde_oficial.java
+          if [ -f autograde_oficial/Autograde.java ]; then
+            javac -d out_autograde autograde_oficial/Autograde.java
             echo "AUTOGRADE_FUENTE=oficial" >> $GITHUB_ENV
           else
             echo "::warning::Autograde oficial no disponible. Usando el LOCAL (riesgo de manipulación)."
